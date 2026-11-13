@@ -1,0 +1,80 @@
+[
+ {
+  "name": "1. Stable readings: no alert reaches the nurse",
+  "ok": true,
+  "detail": "nurse panel empty",
+  "ms": 9
+ },
+ {
+  "name": "2. Mild change, companion responds in time: nurse not alerted",
+  "ok": true,
+  "detail": "companion alerted, response logged, nurse panel stayed clear after 10 s",
+  "ms": 11994
+ },
+ {
+  "name": "3. Mild change, no response: alert escalates to nurse after the 10 s timeout",
+  "ok": true,
+  "detail": "no nurse alert at 5 s; nurse alert present by 11.5 s; reason logged",
+  "ms": 11544
+ },
+ {
+  "name": "4. Mild change while companion is far (30 m): nurse alerted at once",
+  "ok": true,
+  "detail": "nurse alert within 0.4 s",
+  "ms": 649
+ },
+ {
+  "name": "5. Severe deterioration: nurse and companion alerted together",
+  "ok": true,
+  "detail": "critical alert on both within 0.4 s",
+  "ms": 437
+ },
+ {
+  "name": "6. Companion walks away during an open alert: escalates to nurse",
+  "ok": true,
+  "detail": "escalated within about 1 s of leaving; reason logged",
+  "ms": 3263
+ },
+ {
+  "name": "7. Companion out of range: monitoring interval tightens and patient shows as alone",
+  "ok": true,
+  "detail": "60 s with companion, 15 s beyond 15 m; queue marks patient alone",
+  "ms": 222
+ },
+ {
+  "name": "8. Handover to nurse: nurse sees the patient is in their care",
+  "ok": true,
+  "detail": "handover notice shown and logged",
+  "ms": 330
+ },
+ {
+  "name": "9. Handover to another relative: band re-paired to the new companion",
+  "ok": true,
+  "detail": "companion changed from daughter to son",
+  "ms": 332
+ },
+ {
+  "name": "10. Companion reports chest pain: priority rises and nurse alerted",
+  "ok": true,
+  "detail": "priority score 0 -> 3; nurse alerted",
+  "ms": 342
+ },
+ {
+  "name": "11. Turn call: companion band directs to clinic 3",
+  "ok": true,
+  "detail": "turn call shown on companion band",
+  "ms": 331
+ },
+ {
+  "name": "12. Nurse can open each patient card with all vital signs",
+  "ok": true,
+  "detail": "switched between 4 patients; each card shows 7 vital fields",
+  "ms": 820
+ },
+ {
+  "name": "13. Companion reports confusion: 3 NEWS2 points and nurse alerted",
+  "ok": true,
+  "detail": "confusion shown on card with 3 points; nurse alerted",
+  "ms": 336
+ }
+]

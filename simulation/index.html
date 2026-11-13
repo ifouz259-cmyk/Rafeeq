@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>رفيق · محاكاة</title>
+<title>سوار رفيق</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: control strip on top, then three devices side by side (patient band, companion band, nurse station), event log under them. Stacks to one column on phones. */
+:root{
+  --bg:#eef2f1; --surface:#ffffff; --ink:#14211f; --muted:#5a6b68; --line:#d3dcda;
+  --band:#1d3a36; --screen:#0c1513; --screen-ink:#d9f2ec;
+  --accent:#0f7a6c; --accent-soft:#d6efea;
+  --warn:#b26a00; --warn-soft:#fbecd2; --crit:#c0322b; --crit-soft:#f8dcd9; --ok:#1f7a3d;
+  --f-display:"Readex Pro","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Arabic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1514; --surface:#15201e; --ink:#e3ece9; --muted:#93a5a1; --line:#2a3a37;
+  --band:#2b4f49; --screen:#060b0a; --screen-ink:#cfeee6;
+  --accent:#3fbfac; --accent-soft:#16332f;
+  --warn:#f0a23a; --warn-soft:#3a2a12; --crit:#ff6b62; --crit-soft:#3d1a18; --ok:#5cc983;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1514; --surface:#15201e; --ink:#e3ece9; --muted:#93a5a1; --line:#2a3a37;
+  --band:#2b4f49; --screen:#060b0a; --screen-ink:#cfeee6;
+  --accent:#3fbfac; --accent-soft:#16332f;
+  --warn:#f0a23a; --warn-soft:#3a2a12; --crit:#ff6b62; --crit-soft:#3d1a18; --ok:#5cc983;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:20px}
+header{display:grid;gap:4px}
+h1{font-family:var(--f-display);font-size:1.7rem;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:65ch}
+.tag{font-size:.75rem;letter-spacing:.04em;color:var(--accent);font-weight:600}
+h2{font-family:var(--f-display);font-size:1.05rem;margin:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px;min-width:0}
+.controls{display:grid;gap:14px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.lbl{font-size:.8rem;color:var(--muted);font-weight:600;min-width:7.5em}
+button{font:inherit;font-weight:600;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+button.primary{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+button.danger{border-color:var(--crit);color:var(--crit)}
+button:disabled{opacity:.45;cursor:not-allowed}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--accent)}
+.devices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.devices{grid-template-columns:1fr}}
+/* wristband */
+.band{position:relative;background:var(--band);border-radius:28px;padding:18px 16px;display:grid;gap:10px;justify-items:center}
+.band::before,.band::after{content:"";position:absolute;inset-inline:38%;height:14px;background:var(--band);opacity:.55;border-radius:4px}
+.band::before{top:-10px}.band::after{bottom:-10px}
+.band-name{color:var(--screen-ink);font-size:.8rem;font-weight:600;opacity:.85}
+.screen{width:100%;max-width:260px;background:var(--screen);color:var(--screen-ink);border-radius:16px;padding:14px;display:grid;gap:8px;min-height:150px;border:2px solid transparent;transition:border-color .2s}
+.vitals{display:flex;justify-content:space-around;gap:8px;font-family:var(--f-mono)}
+.v{display:grid;text-align:center}
+.v b{font-size:1.6rem;line-height:1.1}
+.v small{font-size:.7rem;opacity:.7;font-family:var(--f-body)}
+.msg{font-size:.9rem;text-align:center;min-height:2.6em}
+.pattern{font-family:var(--f-mono);font-size:.75rem;text-align:center;opacity:.75;letter-spacing:.1em}
+.buzz{animation:buzz .12s linear 0s 6}
+.screen.warn{border-color:var(--warn)}.screen.crit{border-color:var(--crit)}.screen.call{border-color:var(--accent)}
+@keyframes buzz{0%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}100%{transform:translateX(0)}}
+@media (prefers-reduced-motion:reduce){.buzz{animation:none}}
+.band-btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.band-btns button{background:transparent;color:var(--screen-ink);border-color:rgba(255,255,255,.3);padding:6px 10px;font-size:.82rem}
+.band-btns button:hover{border-color:var(--screen-ink)}
+.meta{font-size:.8rem;color:var(--muted);display:grid;gap:2px}
+.meta span b{color:var(--ink);font-weight:600}
+/* nurse */
+.alerts{display:grid;gap:8px}
+.alert{border-radius:10px;padding:10px 12px;font-size:.88rem;display:grid;gap:6px}
+.alert.warn{background:var(--warn-soft);color:var(--ink);border-inline-start:4px solid var(--warn)}
+.alert.crit{background:var(--crit-soft);color:var(--ink);border-inline-start:4px solid var(--crit)}
+.alert.info{background:var(--accent-soft);color:var(--ink);border-inline-start:4px solid var(--accent)}
+.empty{color:var(--muted);font-size:.88rem}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{text-align:start;padding:6px 4px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:.75rem}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tr.me td{font-weight:700;color:var(--accent)}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.72rem;font-weight:600}
+.pill.with{background:var(--accent-soft);color:var(--accent)}
+.pill.alone{background:var(--warn-soft);color:var(--warn)}
+.countdown{font-family:var(--f-mono);font-weight:600}
+.log{font-size:.85rem;max-height:260px;overflow:auto;display:grid;gap:4px;margin:0;padding:0;list-style:none}
+.log li{display:flex;gap:10px;border-bottom:1px dashed var(--line);padding-block:4px}
+.log time{font-family:var(--f-mono);color:var(--muted);flex:none}
+.note{font-size:.8rem;color:var(--muted)}
+.pbtn{font:inherit;font-weight:700;background:none;border:0;padding:4px 0;color:var(--ink);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+tr.sel td{background:var(--accent-soft)}
+.detail{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px}
+.detail h3{margin:0;font-size:.95rem}
+.detail .sub2{font-size:.78rem;color:var(--muted)}
+.vgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.vbox{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;gap:2px;min-width:0}
+.vbox small{font-size:.72rem;color:var(--muted)}
+.vbox b{font-family:var(--f-mono);font-size:1.15rem;font-variant-numeric:tabular-nums}
+.vbox b.txt{font-family:inherit;font-size:.95rem}
+.vbox .pts{font-size:.72rem;font-weight:600}
+.pts.p0{color:var(--ok)}.pts.p1,.pts.p2{color:var(--warn)}.pts.p3{color:var(--crit)}.pts.na{color:var(--muted)}
+.sumrow{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:.85rem}
+.sumrow b{font-family:var(--f-mono)}
+.scroll{overflow-x:auto}
+select{font:inherit;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 10px}
+</style></head><body>
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header>
+    <span class="tag">نموذج أولي · Medathon · المسار 1</span>
+    <h1>سوار رفيق: المرافق جزء من المراقبة</h1>
+    <p class="sub">محاكاة لسوارين مقترنين في غرفة انتظار الطوارئ. غيّري حالة المريض والمسافة، وشاهدي كيف يصل التنبيه للمرافق أولاً ثم للممرض.</p>
+  </header>
+
+  <section class="panel controls" aria-label="لوحة المحاكاة">
+    <h2>لوحة المحاكاة</h2>
+    <div class="row"><span class="lbl">حالة المريض</span>
+      <button id="sc-normal" class="on">طبيعي</button>
+      <button id="sc-mild">تغيّر بسيط</button>
+      <button id="sc-severe">تدهور حاد</button>
+    </div>
+    <div class="row"><span class="lbl">بُعد المرافق</span>
+      <input id="dist" type="range" min="0" max="60" value="3" aria-label="المسافة بالمتر">
+      <span id="distTxt" class="countdown">3 م</span>
+    </div>
+    <div class="row"><span class="lbl">مهلة الاستجابة</span>
+      <select id="timeout" aria-label="مهلة الاستجابة">
+        <option value="10">10 ثوانٍ (للعرض)</option>
+        <option value="60">دقيقة</option>
+        <option value="120">دقيقتان</option>
+      </select>
+      <button id="reset">إعادة البداية</button>
+    </div>
+    <p class="note">القراءات محاكاة. في النموذج الفعلي تأتي من حساس MAX30102، والمسافة من قوة إشارة البلوتوث بين لوحتي ESP32. المرافق يُعتبر قريباً حتى 15 متراً.</p>
+  </section>
+
+  <div class="devices">
+    <!-- patient -->
+    <section class="panel" aria-label="سوار المريض">
+      <h2>سوار المريض</h2>
+      <div class="band">
+        <span class="band-name">أ-12 · رجل، 68 سنة</span>
+        <div class="screen" id="pScreen">
+          <div class="vitals">
+            <div class="v"><b id="hr">92</b><small>نبضة/د</small></div>
+            <div class="v"><b id="spo2">98</b><small>أكسجين %</small></div>
+          </div>
+          <div class="msg" id="pMsg">القراءات مستقرة</div>
+          <div class="pattern" id="pPat"></div>
+        </div>
+      </div>
+      <div class="meta">
+        <span>المراقبة: <b id="interval">كل 60 ثانية</b></span>
+        <span>المرافقة: <b id="pairState">مع المرافق</b></span>
+        <span>الفرز الأولي: <b>CTAS 3</b></span>
+      </div>
+    </section>
+
+    <!-- companion -->
+    <section class="panel" aria-label="سوار المرافق">
+      <h2>سوار المرافق</h2>
+      <div class="band">
+        <span class="band-name" id="cName">المرافق: الابنة</span>
+        <div class="screen" id="cScreen">
+          <div class="msg" id="cMsg">مقترن بـ أ-12<br>لا تنبيهات</div>
+          <div class="pattern" id="cPat"></div>
+          <div class="countdown msg" id="cCount"></div>
+        </div>
+        <div class="band-btns">
+          <button id="ack" disabled>استجبت</button>
+          <button id="rep-conf">بلاغ: تشوّش</button>
+          <button id="rep-chest">بلاغ: ألم صدر</button>
+          <button id="rep-breath">بلاغ: ضيق تنفس</button>
+        </div>
+      </div>
+      <div class="row">
+        <button id="ho-alt">تسليم لمرافق بديل</button>
+        <button id="ho-nurse">تسليم للممرض مؤقتاً</button>
+        <button id="ho-back" hidden>رجوع المرافق</button>
+      </div>
+    </section>
+
+    <!-- nurse -->
+    <section class="panel" aria-label="لوحة الممرض">
+      <h2>لوحة الممرض</h2>
+      <div class="alerts" id="alerts"><p class="empty">لا توجد تنبيهات تحتاج تدخل الطاقم.</p></div>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>المريض</th><th>الأولوية</th><th>المرافقة</th></tr></thead>
+          <tbody id="queue"></tbody>
+        </table>
+      </div>
+      <div class="detail" id="detail" aria-live="polite"></div>
+      <p class="note">اضغطي على رقم المريض لعرض بطاقته. المرضى غير أ-12 أمثلة ثابتة للعرض. الأولوية = نقاط NEWS2 للنبض والأكسجين والوعي + 3 لبلاغ ألم صدر أو ضيق تنفس + 1 إذا كان المريض وحده.</p>
+      <button class="primary" id="callTurn">نادِ دور أ-12 (عيادة 3)</button>
+    </section>
+  </div>
+
+  <section class="panel" aria-label="سجل الأحداث">
+    <h2>سجل الأحداث</h2>
+    <ul class="log" id="log"></ul>
+  </section>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const NEAR=15;
+const PAT={warn:"▮▯▮▯  اهتزاز قصير متكرر",crit:"▮▮▮▮▮  اهتزاز طويل متصل",call:"▮▯▯▮▯▯  نداء الدور",ret:"▮▮▯▮▮▯  ارجع للمريض"};
+// Example patients (static, for the demo only)
+const others=[
+  {id:"ب-07",who:"امرأة، 54 سنة",ctas:2,hr:118,spo2:93,rr:22,temp:34.1,move:"ثابت",bp:"146/90",conscious:"لا بلاغ تشوّش",with:true,companion:"الزوج",report:0},
+  {id:"ج-03",who:"رجل، 31 سنة",ctas:3,hr:96,spo2:95,rr:18,temp:33.2,move:"ثابت",bp:"122/78",conscious:"لا بلاغ تشوّش",with:false,companion:"",report:0},
+  {id:"د-19",who:"امرأة، 72 سنة",ctas:4,hr:74,spo2:97,rr:16,temp:33.0,move:"ثابت",bp:"134/80",conscious:"لا بلاغ تشوّش",with:true,companion:"الابن",report:0}
+];
+let S;
+function init(){
+  S={scenario:"normal",hr:80,spo2:98,dist:3,companion:"الابنة",handedToNurse:false,
+     level:"none",deadline:null,report:null,reportPts:0,acked:false,called:false,sel:"أ-12",why:""};
+  $("dist").value=3; $("ho-back").hidden=true; setScenarioBtns(); $("log").innerHTML="";
+  log("تم اقتران سوار أ-12 بسوار المرافق (الابنة) عند الفرز");
+  render();
+}
+function now(){return new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}
+function log(t){const li=document.createElement("li");li.innerHTML=`<time>${now()}</time><span>${t}</span>`;$("log").prepend(li)}
+function near(){return !S.handedToNurse && S.dist<=NEAR}
+// NEWS2 bands for adults (Royal College of Physicians 2017): heart rate, SpO2 scale 1, new confusion
+function hrPts(h){if(h<=40||h>=131)return 3;if(h>=111)return 2;if(h<=50||h>=91)return 1;return 0}
+function o2Pts(o){if(o<=91)return 3;if(o<=93)return 2;if(o<=95)return 1;return 0}
+function confPts(){return S.report==="تشوّش"?3:0}
+function vitalPts(){return hrPts(S.hr)+o2Pts(S.spo2)+confPts()}
+function urgentPts(){return (S.report==="ألم صدر"||S.report==="ضيق تنفس")?3:0}
+function score(){return vitalPts()+urgentPts()+(near()?0:1)}
+function scen(){return S.scenario==="mild"?{rr:20,temp:33.9}:S.scenario==="severe"?{rr:26,temp:34.6}:{rr:16,temp:33.4}}
+function buzz(el){el.classList.remove("buzz");void el.offsetWidth;el.classList.add("buzz");try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
+
+function setScenarioBtns(){["normal","mild","severe"].forEach(k=>$("sc-"+k).classList.toggle("on",S.scenario===k))}
+function setScenario(k){
+  S.scenario=k; setScenarioBtns();
+  if(k==="normal"){S.hr=80;S.spo2=98;if(S.level!=="none")log("عادت القراءات طبيعية، أُغلق التنبيه");clearAlert();}
+  if(k==="mild"){S.hr=114;S.spo2=94;log("تغيّر بسيط: النبض 114، الأكسجين 94%");escalateMild();}
+  if(k==="severe"){S.hr=138;S.spo2=88;log("تدهور حاد: النبض 138، الأكسجين 88%");toNurse("crit","تدهور حاد في القراءات");}
+  render();
+}
+function clearAlert(){S.level="none";S.deadline=null;S.acked=false}
+function escalateMild(){
+  S.acked=false;
+  if(near()){S.level="companion";S.deadline=Date.now()+(+$("timeout").value)*1000;
+    log(`تنبيه لسوار المرافق (${S.companion}). مهلة الاستجابة ${$("timeout").selectedOptions[0].text}`);buzz($("cScreen"));}
+  else{toNurse("warn",S.handedToNurse?"المريض في عهدة الممرض مؤقتاً":"المرافق بعيد عن المريض")}
+}
+function toNurse(kind,why){
+  S.level=kind==="crit"?"crit":"nurse";S.deadline=null;S.why=why;
+  log(`وصل التنبيه للممرض: ${why}`);
+  if(kind==="crit" && near()){log("وأيضاً تنبيه فوري لسوار المرافق");buzz($("cScreen"))}
+}
+function ack(){
+  if(S.level!=="companion")return;
+  S.acked=true;S.level="handled";S.deadline=null;
+  log(`المرافق (${S.companion}) استجاب وهو قريب. سُجّلت الاستجابة ولم يُزعج الممرض`);render();
+}
+function report(kind,label,pts){
+  S.report=label;S.reportPts=pts;log(`بلاغ من المرافق: ${label}`);
+  if(kind==="chest"||kind==="breath"){toNurse("warn",`بلاغ المرافق: ${label}`)}
+  if(kind==="conf"){toNurse("crit","بلاغ المرافق: تشوّش (3 نقاط في NEWS2)")}
+  render();
+}
+function handover(to){
+  if(to==="alt"){S.companion="الابن";S.handedToNurse=false;log("تسليم المرافقة: من الابنة إلى الابن بتلامس السوارين");$("ho-back").hidden=false}
+  if(to==="nurse"){S.handedToNurse=true;log(`تسليم المرافقة مؤقتاً للممرض. المرافق (${S.companion}) خرج`);$("ho-back").hidden=false;
+    if(S.level==="companion"){toNurse("warn","المرافق سلّم المريض أثناء تنبيه مفتوح")}}
+  if(to==="back"){S.companion="الابنة";S.handedToNurse=false;log("رجعت الابنة واستلمت المرافقة من جديد");$("ho-back").hidden=true}
+  render();
+}
+function callTurn(){S.called=true;log("نداء الدور: سوار المرافق يوجّه إلى عيادة 3");buzz($("cScreen"));render();setTimeout(()=>{S.called=false;render()},6000)}
+
+function tick(){
+  if(S.scenario!=="normal"){const j=()=>Math.round(Math.random()*2-1);
+    const base=S.scenario==="mild"?[114,94]:[138,88];S.hr=base[0]+j()*2;S.spo2=Math.max(80,Math.min(100,base[1]+j()));}
+  else{S.hr=80+Math.round(Math.random()*4-2);S.spo2=97+Math.round(Math.random());}
+  if(S.level==="companion"){
+    if(!near()){toNurse("warn","المرافق ابتعد أثناء تنبيه مفتوح")}
+    else if(Date.now()>=S.deadline){toNurse("warn","انتهت المهلة بدون استجابة من المرافق")}
+  }
+  render();
+}
+
+function render(){
+  $("hr").textContent=S.hr;$("spo2").textContent=S.spo2;
+  $("distTxt").textContent=S.dist+" م";
+  const n=near();
+  $("interval").textContent=n?"كل 60 ثانية (مع مرافق)":"كل 15 ثانية (بدون مرافق)";
+  $("pairState").textContent=S.handedToNurse?"في عهدة الممرض مؤقتاً":(n?`مع المرافق (${S.companion})`:`المرافق بعيد (${S.dist} م)`);
+  $("cName").textContent=S.handedToNurse?"المرافق: خارج القسم":"المرافق: "+S.companion;
+
+  const ps=$("pScreen"),cs=$("cScreen");ps.className="screen";cs.className=cs.className.includes("buzz")?"screen buzz":"screen";
+  const pm=$("pMsg"),cm=$("cMsg"),cc=$("cCount"),cp=$("cPat");cp.textContent="";cc.textContent="";
+  if(S.scenario==="normal"){pm.textContent="القراءات مستقرة"}
+  else if(S.scenario==="mild"){pm.textContent="تغيّر بسيط";ps.classList.add("warn")}
+  else{pm.textContent="تدهور حاد";ps.classList.add("crit")}
+
+  $("ack").disabled=S.level!=="companion";
+  if(S.handedToNurse){cm.innerHTML="السوار غير مقترن الآن<br>المريض في عهدة الممرض"}
+  else if(S.called){cm.innerHTML="جاء دور أ-12<br>توجّه إلى عيادة 3";cs.classList.add("call");cp.textContent=PAT.call}
+  else if(S.level==="companion"){cm.innerHTML="تغيّر في حالة المريض<br>اضغط «استجبت» إذا كنت معه";cs.classList.add("warn");cp.textContent=PAT.warn;
+    cc.textContent="المتبقي: "+Math.max(0,Math.ceil((S.deadline-Date.now())/1000))+" ث"}
+  else if(S.level==="crit"&&n){cm.innerHTML="تدهور حاد<br>الممرض في الطريق";cs.classList.add("crit");cp.textContent=PAT.crit}
+  else if(S.level==="nurse"&&n){cm.innerHTML="تم تبليغ الممرض<br>ابقَ مع المريض";cs.classList.add("warn");cp.textContent=PAT.ret}
+  else if(S.level==="handled"){cm.innerHTML="سُجّلت استجابتك<br>استمر في المتابعة"}
+  else if(!n){cm.innerHTML=`أنت بعيد ${S.dist} م<br>المراقبة أُعيدت للممرض`;cs.classList.add("warn");cp.textContent=PAT.ret}
+  else{cm.innerHTML=`مقترن بـ أ-12<br>${S.report?"آخر بلاغ: "+S.report:"لا تنبيهات"}`}
+
+  const al=$("alerts");let h="";
+  if(S.level==="crit")h+=`<div class="alert crit"><b>أ-12 · تدهور حاد</b><span>${S.why?S.why+". ":""}نبض ${S.hr}، أكسجين ${S.spo2}%. ${n?"المرافق مع المريض.":"المريض بدون مرافق."}</span></div>`;
+  if(S.level==="nurse")h+=`<div class="alert warn"><b>أ-12 · تصعيد من المرافق</b><span>${S.why?S.why+". ":""}نبض ${S.hr}، أكسجين ${S.spo2}%.</span></div>`;
+  if(S.handedToNurse)h+=`<div class="alert info"><b>أ-12 في عهدتك مؤقتاً</b><span>المرافق خارج القسم. المراقبة كل 15 ثانية.</span></div>`;
+  if(S.level==="companion")h+=`<div class="alert info"><b>أ-12 · تنبيه عند المرافق</b><span>ينتظر استجابة ${S.companion}. يصلك إذا انتهت المهلة.</span></div>`;
+  al.innerHTML=h||'<p class="empty">لا توجد تنبيهات تحتاج تدخل الطاقم.</p>';
+
+  const oScore=o=>hrPts(o.hr)+o2Pts(o.spo2)+(o.with?0:1);
+  const rows=[{id:"أ-12",score:score(),with:n,me:true},...others.map(o=>({id:o.id,score:oScore(o),with:o.with}))].sort((a,b)=>b.score-a.score);
+  $("queue").innerHTML=rows.map(r=>`<tr class="${r.me?"me":""} ${r.id===S.sel?"sel":""}"><td><button class="pbtn" data-id="${r.id}" aria-pressed="${r.id===S.sel}">${r.id}</button></td><td class="num">${r.score}</td><td><span class="pill ${r.with?"with":"alone"}">${r.with?"مع مرافق":"وحده"}</span></td></tr>`).join("");
+  renderDetail();
+}
+
+function ptsTag(p){return p===null?'<span class="pts na">لا يدخل في النقاط</span>':`<span class="pts p${p}">${p} ${p===1?"نقطة":"نقاط"} NEWS2</span>`}
+function vbox(label,val,unit,ptsHtml){return `<div class="vbox"><small>${label}</small><b class="${typeof val==="number"||/^[\d.\/]+$/.test(val)?"":"txt"}">${val}${unit?` <small>${unit}</small>`:""}</b>${ptsHtml||""}</div>`}
+function renderDetail(){
+  let p;
+  if(S.sel==="أ-12"){const sc=scen();const n=near();
+    p={id:"أ-12",who:"رجل، 68 سنة",ctas:3,hr:S.hr,spo2:S.spo2,rr:sc.rr,temp:sc.temp,move:"ثابت",bp:"128/82",
+       conscious:S.report==="تشوّش"?"تشوّش (بلاغ المرافق)":"لا بلاغ تشوّش",confP:confPts(),
+       comp:S.handedToNurse?"في عهدة الممرض مؤقتاً":(n?`${S.companion}، قريب ${S.dist} م`:`المرافق بعيد ${S.dist} م`),
+       report:S.report&&S.report!=="تشوّش"?S.report:"",news:vitalPts(),prio:score(),live:true};}
+  else{const o=others.find(x=>x.id===S.sel);
+    p={...o,confP:0,comp:o.with?`${o.companion}، قريب`:"وحده بدون مرافق",report:"",news:hrPts(o.hr)+o2Pts(o.spo2),prio:hrPts(o.hr)+o2Pts(o.spo2)+(o.with?0:1),live:false};}
+  $("detail").innerHTML=`<h3>بطاقة المريض ${p.id}</h3>
+    <div class="sub2">${p.who} · فرز CTAS ${p.ctas} · ${p.live?"قراءات حية من السوار (محاكاة)":"مثال ثابت للعرض"}</div>
+    <div class="vgrid">
+      ${vbox("النبض",p.hr,"نبضة/د",ptsTag(hrPts(p.hr)))}
+      ${vbox("الأكسجين",p.spo2,"%",ptsTag(o2Pts(p.spo2)))}
+      ${vbox("معدل التنفس (تقديري)",p.rr,"/د",ptsTag(null))}
+      ${vbox("حرارة الجلد",p.temp.toFixed(1),"°م",'<span class="pts na">اتجاه فقط، أقل من الحرارة الداخلية</span>')}
+      ${vbox("الوعي",p.conscious,"",ptsTag(p.confP))}
+      ${vbox("الحركة",p.move,"",'<span class="pts na">من حساس الحركة</span>')}
+      ${vbox("ضغط الدم",p.bp,"ملم زئبق",'<span class="pts na">من الفرز، قياس يدوي</span>')}
+      ${vbox("المرافقة",p.comp,"",p.report?`<span class="pts p3">بلاغ: ${p.report}</span>`:"")}
+    </div>
+    <div class="sumrow"><span>مجموع NEWS2 (النبض والأكسجين والوعي): <b>${p.news}</b></span><span>الأولوية في الطابور: <b>${p.prio}</b></span></div>`;
+}
+$("queue").addEventListener("click",e=>{const b=e.target.closest("button[data-id]");if(!b)return;S.sel=b.dataset.id;render()});
+$("sc-normal").onclick=()=>setScenario("normal");
+$("sc-mild").onclick=()=>setScenario("mild");
+$("sc-severe").onclick=()=>setScenario("severe");
+$("dist").oninput=e=>{const was=near();S.dist=+e.target.value;if(was!==near())log(near()?`المرافق رجع قريباً (${S.dist} م)`:`المرافق ابتعد (${S.dist} م)، المراقبة تزيد`);render()};
+$("ack").onclick=ack;
+$("rep-conf").onclick=()=>report("conf","تشوّش",3);
+$("rep-chest").onclick=()=>report("chest","ألم صدر",3);
+$("rep-breath").onclick=()=>report("breath","ضيق تنفس",3);
+$("ho-alt").onclick=()=>handover("alt");
+$("ho-nurse").onclick=()=>handover("nurse");
+$("ho-back").onclick=()=>handover("back");
+$("callTurn").onclick=callTurn;
+$("reset").onclick=init;
+init();setInterval(tick,1000);
+})();
+</script>
+</body></html>
